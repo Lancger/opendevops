@@ -52,44 +52,44 @@ yum install epel-release -y >/dev/null 2>&1 && yum install wget unzip epel-relea
 
 # 安装Python3
 function python3(){
-echo -e "\033[32m [INFO]: Start install python3 \033[0m"
-yum groupinstall Development tools -y
-yum -y install zlib-devel
-yum install -y python36-devel-3.6.3-7.el7.x86_64 openssl-devel libxslt-devel libxml2-devel libcurl-devel
-cd /usr/local/src/
-wget -q -c https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tar.xz
-tar xf  Python-3.6.4.tar.xz >/dev/null 2>&1 && cd Python-3.6.4
-./configure >/dev/null 2>&1
-make >/dev/null 2>&1 && make install >/dev/null 2>&1
-if [ $? == 0 ];then
-    echo -e "\033[32m [INFO]: python3 install success. \033[0m"
-else
-    echo -e "\033[31m [ERROR]: python3 install faild \033[0m"
-    exit -1
-fi
+    echo -e "\033[32m [INFO]: Start install python3 \033[0m"
+    yum groupinstall Development tools -y
+    yum -y install zlib-devel
+    yum install -y python36-devel-3.6.3-7.el7.x86_64 openssl-devel libxslt-devel libxml2-devel libcurl-devel
+    cd /usr/local/src/
+    wget -q -c https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tar.xz
+    tar xf  Python-3.6.4.tar.xz >/dev/null 2>&1 && cd Python-3.6.4
+    ./configure >/dev/null 2>&1
+    make >/dev/null 2>&1 && make install >/dev/null 2>&1
+    if [ $? == 0 ];then
+        echo -e "\033[32m [INFO]: python3 install success. \033[0m"
+    else
+        echo -e "\033[31m [ERROR]: python3 install faild \033[0m"
+        exit -1
+    fi
 }
 
 # 安装Docker-compose
 function docker_compose(){
-echo -e "\033[32m [INFO]: Start install docker,docker-compose \033[0m"
-yum install -y yum-utils device-mapper-persistent-data lvm2
-yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-yum-config-manager --enable docker-ce-edge
-yum install -y docker-ce
-###启动
-/bin/systemctl start docker.service
-### 开机自启
-/bin/systemctl enable docker.service
-#安装docker-compose编排工具
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-python3 get-pip.py
-pip3 install docker-compose
-if [ $? == 0 ];then
-    echo -e "\033[32m [INFO]: docker-compose install success. \033[0m"
-else
-    echo -e "\033[31m [ERROR]: docker-compose install faild \033[0m"
-    exit -2
-fi
+    echo -e "\033[32m [INFO]: Start install docker,docker-compose \033[0m"
+    yum install -y yum-utils device-mapper-persistent-data lvm2
+    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    yum-config-manager --enable docker-ce-edge
+    yum install -y docker-ce
+    ###启动
+    /bin/systemctl start docker.service
+    ### 开机自启
+    /bin/systemctl enable docker.service
+    #安装docker-compose编排工具
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+    python3 get-pip.py
+    pip3 install docker-compose
+    if [ $? == 0 ];then
+        echo -e "\033[32m [INFO]: docker-compose install success. \033[0m"
+    else
+        echo -e "\033[31m [ERROR]: docker-compose install faild \033[0m"
+        exit -2
+    fi
 }
 
 
@@ -122,80 +122,79 @@ fi
 }
 
 function init_mysql(){
-#初始化数据库
-cd /opt/codo/opendevops/
-source ./env.sh
-sleep 3s
-mysql -h127.0.0.1 -uroot -p${MYSQL_PASSWORD} < data.sql
-if [ $? == 0 ];then
-    echo -e "\033[32m [INFO]: init_mysql success. \033[0m"
-else
-    echo -e "\033[31m [ERROR]: init_mysql faild \033[0m"
-    echo "mysql -h127.0.0.1 -uroot -p${MYSQL_PASSWORD} < data.sql"
-    exit -500
-fi
-
+    #初始化数据库
+    cd /opt/codo/opendevops/
+    source ./env.sh
+    sleep 3s
+    mysql -h127.0.0.1 -uroot -p${MYSQL_PASSWORD} < data.sql
+    if [ $? == 0 ];then
+        echo -e "\033[32m [INFO]: init_mysql success. \033[0m"
+    else
+        echo -e "\033[31m [ERROR]: init_mysql faild \033[0m"
+        echo "mysql -h127.0.0.1 -uroot -p${MYSQL_PASSWORD} < data.sql"
+        exit -500
+    fi
 }
 
 
 # 安装redis
 function redis3(){
-echo -e "\033[32m [INFO]: Start install redis3.2 \033[0m"
-yum -y install redis-3.2.*
+    echo -e "\033[32m [INFO]: Start install redis3.2 \033[0m"
+    yum -y install redis-3.2.*
 
-echo "[INFO]: start init redis"
-### 开启AOF
-sed -i 's#appendonly no$#appendonly yes#g' /etc/redis.conf
-### 操作系统决定
-sed -i 's#appendfsync .*$$#appendfsync everysec$#g' /etc/redis.conf
-### 修改绑定IP
-sed -i 's/^bind 127.0.0.1$/#bind 127.0.0.1/g' /etc/redis.conf
-### 是否以守护进程方式启动
-sed -i 's#daemonize no$#daemonize yes#g' /etc/redis.conf
-### 当时间间隔超过60秒，或存储超过1000条记录时，进行持久化
-sed -i 's#^save 60 .*$#save 60 1000#g' /etc/redis.conf
-### 快照压缩
-sed -i 's#rdbcompression no$#rdbcompression yes#g' /etc/redis.conf
-### 添加密码
-sed -i "s#.*requirepass .*#requirepass ${REDIS_PASSWORD}#g" /etc/redis.conf
-systemctl start redis
-systemctl status redis
-systemctl enable redis
+    echo "[INFO]: start init redis"
+    ### 开启AOF
+    sed -i 's#appendonly no$#appendonly yes#g' /etc/redis.conf
+    ### 操作系统决定
+    sed -i 's#appendfsync .*$$#appendfsync everysec$#g' /etc/redis.conf
+    ### 修改绑定IP
+    sed -i 's/^bind 127.0.0.1$/#bind 127.0.0.1/g' /etc/redis.conf
+    ### 是否以守护进程方式启动
+    sed -i 's#daemonize no$#daemonize yes#g' /etc/redis.conf
+    ### 当时间间隔超过60秒，或存储超过1000条记录时，进行持久化
+    sed -i 's#^save 60 .*$#save 60 1000#g' /etc/redis.conf
+    ### 快照压缩
+    sed -i 's#rdbcompression no$#rdbcompression yes#g' /etc/redis.conf
+    ### 添加密码
+    sed -i "s#.*requirepass .*#requirepass ${REDIS_PASSWORD}#g" /etc/redis.conf
+    systemctl start redis
+    systemctl status redis
+    systemctl enable redis
 
-if [ $? == 0 ];then
-    echo -e "\033[32m [INFO]: redis install success. \033[0m"
-    echo -e "\033[32m [INFO]: redis-cli -h 127.0.0.1 -p 6379 -a ${REDIS_PASSWORD}"
-else
-    echo -e "\033[31m [ERROR]: redis install faild \033[0m"
-    exit -4
-fi
+    if [ $? == 0 ];then
+        echo -e "\033[32m [INFO]: redis install success. \033[0m"
+        echo -e "\033[32m [INFO]: redis-cli -h 127.0.0.1 -p 6379 -a ${REDIS_PASSWORD}"
+    else
+        echo -e "\033[31m [ERROR]: redis install faild \033[0m"
+        exit -4
+    fi
 }
 
 
 # 安装RabbitMQ
 function rabbitmq(){
-echo -e "\033[32m [INFO]: Start install rabbitmq \033[0m"
-# echo $LOCALHOST_IP opendevops >> /etc/hosts
-# echo opendevops > /etc/hostname
-# export HOSTNAME=opendevops
-yum install  -y rabbitmq-server
-rabbitmq-plugins enable rabbitmq_management
-systemctl start rabbitmq-server
-rabbitmqctl add_user ${MQ_USER} ${MQ_PASSWORD}
-rabbitmqctl set_user_tags ${MQ_USER} administrator
-rabbitmqctl  set_permissions  -p  '/'  ${MQ_USER} '.' '.' '.'
-systemctl restart rabbitmq-server
-systemctl enable rabbitmq-server
-systemctl status rabbitmq-server
+    echo -e "\033[32m [INFO]: Start install rabbitmq \033[0m"
+    # echo $LOCALHOST_IP opendevops >> /etc/hosts
+    # echo opendevops > /etc/hostname
+    # export HOSTNAME=opendevops
+    yum install  -y rabbitmq-server
+    rabbitmq-plugins enable rabbitmq_management
+    systemctl start rabbitmq-server
+    rabbitmqctl add_user ${MQ_USER} ${MQ_PASSWORD}
+    rabbitmqctl set_user_tags ${MQ_USER} administrator
+    rabbitmqctl  set_permissions  -p  '/'  ${MQ_USER} '.' '.' '.'
+    systemctl restart rabbitmq-server
+    systemctl enable rabbitmq-server
+    systemctl status rabbitmq-server
 
-# rabbitmq-server -detached
-status=`systemctl status rabbitmq-server | grep "running" | wc -l`
-if [ $status == 1 ];then
-    echo -e "\033[32m [INFO]: rabbitmq install success. \033[0m"
-else
-    echo -e "\033[31m [ERROR]: rabbitmq install faild \033[0m"
-    exit -5
-fi
+    # rabbitmq-server -detached
+    status=`systemctl status rabbitmq-server | grep "running" | wc -l`
+    if [ $status == 1 ];then
+        echo -e "\033[32m [INFO]: rabbitmq install success. \033[0m"
+    else
+        echo -e "\033[31m [ERROR]: rabbitmq install faild \033[0m"
+        exit -5
+    fi
 }
 
 # 安装DNS
@@ -237,231 +236,226 @@ else
     echo -e "\033[31m [ERROR]: dnsmasq install faild \033[0m"
     exit -6
 fi
-
-
 }
 
 #安装Node
 function node_install(){
-echo -e "\033[32m [INFO]: Start install Node \033[0m"
-# [ -f /usr/local/bin/node ] && echo "Node already exists" && exit -1
-cd /usr/local/src && rm -rf node-v10.14.2-linux-x64.tar.xz
-wget https://nodejs.org/dist/v10.14.2/node-v10.14.2-linux-x64.tar.xz
-tar xf node-v10.14.2-linux-x64.tar.xz -C  /usr/local/ >/dev/null 2>&1
-rm -rf /usr/local/bin/node
-rm -rf /usr/local/bin/npm
-rm -rf /usr/bin/pm2
-ln -s /usr/local/node-v10.14.2-linux-x64/bin/node /usr/local/bin/node
-ln -s /usr/local/node-v10.14.2-linux-x64/bin/node /usr/bin/node
-ln -s /usr/local/node-v10.14.2-linux-x64/bin/npm  /usr/local/bin/npm
-ln -s /usr/local/node-v10.14.2-linux-x64/bin/npm  /usr/bin/npm
-/usr/local/bin/node -v
-/usr/local/bin/npm -v
-sudo npm i -g pm2 >/dev/null 2>&1
-ln -s /usr/local/node-v10.14.2-linux-x64/bin/pm2 /usr/bin/
-if [ $? == 0 ];then
-    echo -e "\033[32m [INFO]: Node install success. \033[0m"
-else
-    echo -e "\033[31m [ERROR]: Node install faild \033[0m"
-    exit -7
-fi
+    echo -e "\033[32m [INFO]: Start install Node \033[0m"
+    # [ -f /usr/local/bin/node ] && echo "Node already exists" && exit -1
+    cd /usr/local/src && rm -rf node-v10.14.2-linux-x64.tar.xz
+    wget https://nodejs.org/dist/v10.14.2/node-v10.14.2-linux-x64.tar.xz
+    tar xf node-v10.14.2-linux-x64.tar.xz -C  /usr/local/ >/dev/null 2>&1
+    rm -rf /usr/local/bin/node
+    rm -rf /usr/local/bin/npm
+    rm -rf /usr/bin/pm2
+    ln -s /usr/local/node-v10.14.2-linux-x64/bin/node /usr/local/bin/node
+    ln -s /usr/local/node-v10.14.2-linux-x64/bin/node /usr/bin/node
+    ln -s /usr/local/node-v10.14.2-linux-x64/bin/npm  /usr/local/bin/npm
+    ln -s /usr/local/node-v10.14.2-linux-x64/bin/npm  /usr/bin/npm
+    /usr/local/bin/node -v
+    /usr/local/bin/npm -v
+    sudo npm i -g pm2 >/dev/null 2>&1
+    ln -s /usr/local/node-v10.14.2-linux-x64/bin/pm2 /usr/bin/
+    if [ $? == 0 ];then
+        echo -e "\033[32m [INFO]: Node install success. \033[0m"
+    else
+        echo -e "\033[31m [ERROR]: Node install faild \033[0m"
+        exit -7
+    fi
 }
 
 #项目前端
 function codo(){
-echo -e "\033[32m [INFO]: codo(项目前端) Start install. \033[0m"
-codo_version='https://github.com/opendevops-cn/codo/releases/download/codo-beta-0.1.0/codo-beta-0.1.0.tar.gz'
-if ! which wget &>/dev/null; then yum install -y wget >/dev/null 2>&1;fi
-[ ! -d /var/www ] && mkdir -p /var/www
-cd /var/www && wget $codo_version
-tar zxf codo-beta-0.1.0.tar.gz
-if [ $? == 0 ];then
-    echo -e "\033[32m [INFO]: codo(项目前端) install success. \033[0m"
-else
-    echo -e "\033[31m [ERROR]: codo(项目前端) install faild \033[0m"
-    exit -8
-fi
+    echo -e "\033[32m [INFO]: codo(项目前端) Start install. \033[0m"
+    codo_version='https://github.com/opendevops-cn/codo/releases/download/codo-beta-0.1.0/codo-beta-0.1.0.tar.gz'
+    if ! which wget &>/dev/null; then yum install -y wget >/dev/null 2>&1;fi
+    [ ! -d /var/www ] && mkdir -p /var/www
+    cd /var/www && wget $codo_version
+    tar zxf codo-beta-0.1.0.tar.gz
+    if [ $? == 0 ];then
+        echo -e "\033[32m [INFO]: codo(项目前端) install success. \033[0m"
+    else
+        echo -e "\033[31m [ERROR]: codo(项目前端) install faild \033[0m"
+        exit -8
+    fi
 }
 
 #项目后端
 function codo_admin(){
-echo -e "\033[32m [INFO]: codo-admin(项目后端) Start install. \033[0m"
-if ! which wget &>/dev/null; then yum install -y wget >/dev/null 2>&1;fi
-if ! which git &>/dev/null; then yum install -y git >/dev/null 2>&1;fi
-[ ! -d /opt/codo/ ] && mkdir -p /opt/codo
-cd /opt/codo && git clone https://github.com/opendevops-cn/codo-admin.git
-cd codo-admin
-#初始化数据
-DEFAULT_DB_DBNAME='codo_admin'   #项目后端数据库
- #后端数据库名称
-mysql -h 127.0.0.1 -u root -p${MYSQL_PASSWORD} -e "create database ${DEFAULT_DB_DBNAME} default character set utf8mb4 collate utf8mb4_unicode_ci;"
-# mysql -h 127.0.0.1 -u root -p${MYSQL_PASSWORD} < doc/data.sql
-#修改配置
-sed -i  "s#server_name .*#server_name ${mg_domain};#g" doc/nginx_ops.conf
-sed -i "s#cookie_secret = .*#cookie_secret = '${cookie_secret}'#g" settings.py
-sed -i "s#token_secret = .*#token_secret = '${token_secret}'#g" settings.py
-#mysql配置
-sed -i "s#DEFAULT_DB_DBHOST = .*#DEFAULT_DB_DBHOST = os.getenv('DEFAULT_DB_DBHOST', '${DEFAULT_DB_DBHOST}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBUSER = .*#DEFAULT_DB_DBUSER = os.getenv('DEFAULT_DB_DBUSER', '${DEFAULT_DB_DBUSER}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBPWD = .*#DEFAULT_DB_DBPWD = os.getenv('DEFAULT_DB_DBPWD', '${DEFAULT_DB_DBPWD}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBNAME = .*#DEFAULT_DB_DBNAME = os.getenv('DEFAULT_DB_DBNAME', '${DEFAULT_DB_DBNAME}')#g" settings.py
-#只读MySQL配置
-sed -i "s#READONLY_DB_DBHOST = .*#READONLY_DB_DBHOST = os.getenv('READONLY_DB_DBHOST', '${READONLY_DB_DBHOST}')#g" settings.py
-sed -i "s#READONLY_DB_DBPORT = .*#READONLY_DB_DBPORT = os.getenv('READONLY_DB_DBPORT', '${READONLY_DB_DBPORT}')#g" settings.py
-sed -i "s#READONLY_DB_DBUSER = .*#READONLY_DB_DBUSER = os.getenv('READONLY_DB_DBUSER', '${READONLY_DB_DBUSER}')#g" settings.py
-sed -i "s#READONLY_DB_DBPWD = .*#READONLY_DB_DBPWD = os.getenv('READONLY_DB_DBPWD', '${READONLY_DB_DBPWD}')#g" settings.py
-sed -i "s#READONLY_DB_DBNAME = .*#READONLY_DB_DBNAME = os.getenv('READONLY_DB_DBNAME', '${DEFAULT_DB_DBNAME}')#g" settings.py
-#redis配置
-sed -i "s#DEFAULT_REDIS_HOST = .*#DEFAULT_REDIS_HOST = os.getenv('DEFAULT_REDIS_HOST', '${DEFAULT_REDIS_HOST}')#g" settings.py
-sed -i "s#DEFAULT_REDIS_PORT = .*#DEFAULT_REDIS_PORT = os.getenv('DEFAULT_REDIS_PORT', '${DEFAULT_REDIS_PORT}')#g" settings.py
-sed -i "s#DEFAULT_REDIS_PASSWORD = .*#DEFAULT_REDIS_PASSWORD = os.getenv('DEFAULT_REDIS_PASSWORD', '${DEFAULT_REDIS_PASSWORD}')#g" settings.py
-#删除没必要的目录映射
-name=/var/www
-sed -i 's#'$name'#EXCLUSIVE#;/EXCLUSIVE/d' docker-compose.yml
+    echo -e "\033[32m [INFO]: codo-admin(项目后端) Start install. \033[0m"
+    if ! which wget &>/dev/null; then yum install -y wget >/dev/null 2>&1;fi
+    if ! which git &>/dev/null; then yum install -y git >/dev/null 2>&1;fi
+    [ ! -d /opt/codo/ ] && mkdir -p /opt/codo
+    cd /opt/codo && git clone https://github.com/opendevops-cn/codo-admin.git
+    cd codo-admin
+    #初始化数据
+    DEFAULT_DB_DBNAME='codo_admin'   #项目后端数据库
+     #后端数据库名称
+    mysql -h 127.0.0.1 -u root -p${MYSQL_PASSWORD} -e "create database ${DEFAULT_DB_DBNAME} default character set utf8mb4 collate utf8mb4_unicode_ci;"
+    # mysql -h 127.0.0.1 -u root -p${MYSQL_PASSWORD} < doc/data.sql
+    #修改配置
+    sed -i  "s#server_name .*#server_name ${mg_domain};#g" doc/nginx_ops.conf
+    sed -i "s#cookie_secret = .*#cookie_secret = '${cookie_secret}'#g" settings.py
+    sed -i "s#token_secret = .*#token_secret = '${token_secret}'#g" settings.py
+    #mysql配置
+    sed -i "s#DEFAULT_DB_DBHOST = .*#DEFAULT_DB_DBHOST = os.getenv('DEFAULT_DB_DBHOST', '${DEFAULT_DB_DBHOST}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBUSER = .*#DEFAULT_DB_DBUSER = os.getenv('DEFAULT_DB_DBUSER', '${DEFAULT_DB_DBUSER}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBPWD = .*#DEFAULT_DB_DBPWD = os.getenv('DEFAULT_DB_DBPWD', '${DEFAULT_DB_DBPWD}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBNAME = .*#DEFAULT_DB_DBNAME = os.getenv('DEFAULT_DB_DBNAME', '${DEFAULT_DB_DBNAME}')#g" settings.py
+    #只读MySQL配置
+    sed -i "s#READONLY_DB_DBHOST = .*#READONLY_DB_DBHOST = os.getenv('READONLY_DB_DBHOST', '${READONLY_DB_DBHOST}')#g" settings.py
+    sed -i "s#READONLY_DB_DBPORT = .*#READONLY_DB_DBPORT = os.getenv('READONLY_DB_DBPORT', '${READONLY_DB_DBPORT}')#g" settings.py
+    sed -i "s#READONLY_DB_DBUSER = .*#READONLY_DB_DBUSER = os.getenv('READONLY_DB_DBUSER', '${READONLY_DB_DBUSER}')#g" settings.py
+    sed -i "s#READONLY_DB_DBPWD = .*#READONLY_DB_DBPWD = os.getenv('READONLY_DB_DBPWD', '${READONLY_DB_DBPWD}')#g" settings.py
+    sed -i "s#READONLY_DB_DBNAME = .*#READONLY_DB_DBNAME = os.getenv('READONLY_DB_DBNAME', '${DEFAULT_DB_DBNAME}')#g" settings.py
+    #redis配置
+    sed -i "s#DEFAULT_REDIS_HOST = .*#DEFAULT_REDIS_HOST = os.getenv('DEFAULT_REDIS_HOST', '${DEFAULT_REDIS_HOST}')#g" settings.py
+    sed -i "s#DEFAULT_REDIS_PORT = .*#DEFAULT_REDIS_PORT = os.getenv('DEFAULT_REDIS_PORT', '${DEFAULT_REDIS_PORT}')#g" settings.py
+    sed -i "s#DEFAULT_REDIS_PASSWORD = .*#DEFAULT_REDIS_PASSWORD = os.getenv('DEFAULT_REDIS_PASSWORD', '${DEFAULT_REDIS_PASSWORD}')#g" settings.py
+    #删除没必要的目录映射
+    name=/var/www
+    sed -i 's#'$name'#EXCLUSIVE#;/EXCLUSIVE/d' docker-compose.yml
 
-#bulid 镜像
-docker build . -t do_mg_image
-#启动
-docker-compose up -d
-#检查状态
-sleep 3s
-mg_status=`curl -I -X GET -m  10 -o /dev/null -s -w %{http_code}  http://$mg_domain:8010/are_you_ok/`
+    #bulid 镜像
+    docker build . -t do_mg_image
+    #启动
+    docker-compose up -d
+    #检查状态
+    sleep 3s
+    mg_status=`curl -I -X GET -m  10 -o /dev/null -s -w %{http_code}  http://$mg_domain:8010/are_you_ok/`
 
-if [ $mg_status == 200 ];then
-    echo -e "\033[32m [INFO]: codo(项目后端) install success. \033[0m"
-else
-    echo -e "\033[31m [ERROR]: codo(项目后端) install faild \033[0m"
-    exit -9
-fi
+    if [ $mg_status == 200 ];then
+        echo -e "\033[32m [INFO]: codo(项目后端) install success. \033[0m"
+    else
+        echo -e "\033[31m [ERROR]: codo(项目后端) install faild \033[0m"
+        exit -9
+    fi
 }
-
 
 
 #任务系统
 function codo_task(){
-echo -e "\033[32m [INFO]: codo-task(任务系统) Start install. \033[0m"
-if ! which wget &>/dev/null; then yum install -y wget >/dev/null 2>&1;fi
-if ! which git &>/dev/null; then yum install -y git >/dev/null 2>&1;fi
-[ ! -d /opt/codo/ ] && mkdir -p /opt/codo
-cd /opt/codo && git clone https://github.com/opendevops-cn/codo-task.git
-cd codo-task
+    echo -e "\033[32m [INFO]: codo-task(任务系统) Start install. \033[0m"
+    if ! which wget &>/dev/null; then yum install -y wget >/dev/null 2>&1;fi
+    if ! which git &>/dev/null; then yum install -y git >/dev/null 2>&1;fi
+    [ ! -d /opt/codo/ ] && mkdir -p /opt/codo
+    cd /opt/codo && git clone https://github.com/opendevops-cn/codo-task.git
+    cd codo-task
 
-#修改配置
-TASK_DB_DBNAME='codo_task'
- #后端数据库名称
-mysql -h 127.0.0.1 -u root -p${MYSQL_PASSWORD} -e "create database ${TASK_DB_DBNAME} default character set utf8mb4 collate utf8mb4_unicode_ci;"
+    #修改配置
+    TASK_DB_DBNAME='codo_task'
+     #后端数据库名称
+    mysql -h 127.0.0.1 -u root -p${MYSQL_PASSWORD} -e "create database ${TASK_DB_DBNAME} default character set utf8mb4 collate utf8mb4_unicode_ci;"
 
 
-sed -i  "s#server_name .*#server_name ${task_domain};#g" doc/nginx_ops.conf
-sed -i "s#cookie_secret = .*#cookie_secret = '${cookie_secret}'#g" settings.py
-sed -i "s#token_secret = .*#token_secret = '${token_secret}'#g" settings.py
-#mysql配置
-sed -i "s#DEFAULT_DB_DBHOST = .*#DEFAULT_DB_DBHOST = os.getenv('DEFAULT_DB_DBHOST', '${DEFAULT_DB_DBHOST}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBUSER = .*#DEFAULT_DB_DBUSER = os.getenv('DEFAULT_DB_DBUSER', '${DEFAULT_DB_DBUSER}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBPWD = .*#DEFAULT_DB_DBPWD = os.getenv('DEFAULT_DB_DBPWD', '${DEFAULT_DB_DBPWD}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBNAME = .*#DEFAULT_DB_DBNAME = os.getenv('DEFAULT_DB_DBNAME', '${TASK_DB_DBNAME}')#g" settings.py
-#只读MySQL配置
-sed -i "s#READONLY_DB_DBHOST = .*#READONLY_DB_DBHOST = os.getenv('READONLY_DB_DBHOST', '${READONLY_DB_DBHOST}')#g" settings.py
-sed -i "s#READONLY_DB_DBPORT = .*#READONLY_DB_DBPORT = os.getenv('READONLY_DB_DBPORT', '${READONLY_DB_DBPORT}')#g" settings.py
-sed -i "s#READONLY_DB_DBUSER = .*#READONLY_DB_DBUSER = os.getenv('READONLY_DB_DBUSER', '${READONLY_DB_DBUSER}')#g" settings.py
-sed -i "s#READONLY_DB_DBPWD = .*#READONLY_DB_DBPWD = os.getenv('READONLY_DB_DBPWD', '${READONLY_DB_DBPWD}')#g" settings.py
-sed -i "s#READONLY_DB_DBNAME = .*#READONLY_DB_DBNAME = os.getenv('READONLY_DB_DBNAME', '${TASK_DB_DBNAME}')#g" settings.py
-#redis配置
-sed -i "s#DEFAULT_REDIS_HOST = .*#DEFAULT_REDIS_HOST = os.getenv('DEFAULT_REDIS_HOST', '${DEFAULT_REDIS_HOST}')#g" settings.py
-sed -i "s#DEFAULT_REDIS_PORT = .*#DEFAULT_REDIS_PORT = os.getenv('DEFAULT_REDIS_PORT', '${DEFAULT_REDIS_PORT}')#g" settings.py
-sed -i "s#DEFAULT_REDIS_PASSWORD = .*#DEFAULT_REDIS_PASSWORD = os.getenv('DEFAULT_REDIS_PASSWORD', '${DEFAULT_REDIS_PASSWORD}')#g" settings.py
-#MQ配置
-sed -i "s#DEFAULT_MQ_ADDR = .*#DEFAULT_MQ_ADDR = os.getenv('DEFAULT_MQ_ADDR', '${DEFAULT_MQ_ADDR}')#g" settings.py
-sed -i "s#DEFAULT_MQ_USER = .*#DEFAULT_MQ_USER = os.getenv('DEFAULT_MQ_USER', '${DEFAULT_MQ_USER}')#g" settings.py
-sed -i "s#DEFAULT_MQ_PWD = .*#DEFAULT_MQ_PWD = os.getenv('DEFAULT_MQ_PWD', '${DEFAULT_MQ_PWD}')#g" settings.py
+    sed -i  "s#server_name .*#server_name ${task_domain};#g" doc/nginx_ops.conf
+    sed -i "s#cookie_secret = .*#cookie_secret = '${cookie_secret}'#g" settings.py
+    sed -i "s#token_secret = .*#token_secret = '${token_secret}'#g" settings.py
+    #mysql配置
+    sed -i "s#DEFAULT_DB_DBHOST = .*#DEFAULT_DB_DBHOST = os.getenv('DEFAULT_DB_DBHOST', '${DEFAULT_DB_DBHOST}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBUSER = .*#DEFAULT_DB_DBUSER = os.getenv('DEFAULT_DB_DBUSER', '${DEFAULT_DB_DBUSER}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBPWD = .*#DEFAULT_DB_DBPWD = os.getenv('DEFAULT_DB_DBPWD', '${DEFAULT_DB_DBPWD}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBNAME = .*#DEFAULT_DB_DBNAME = os.getenv('DEFAULT_DB_DBNAME', '${TASK_DB_DBNAME}')#g" settings.py
+    #只读MySQL配置
+    sed -i "s#READONLY_DB_DBHOST = .*#READONLY_DB_DBHOST = os.getenv('READONLY_DB_DBHOST', '${READONLY_DB_DBHOST}')#g" settings.py
+    sed -i "s#READONLY_DB_DBPORT = .*#READONLY_DB_DBPORT = os.getenv('READONLY_DB_DBPORT', '${READONLY_DB_DBPORT}')#g" settings.py
+    sed -i "s#READONLY_DB_DBUSER = .*#READONLY_DB_DBUSER = os.getenv('READONLY_DB_DBUSER', '${READONLY_DB_DBUSER}')#g" settings.py
+    sed -i "s#READONLY_DB_DBPWD = .*#READONLY_DB_DBPWD = os.getenv('READONLY_DB_DBPWD', '${READONLY_DB_DBPWD}')#g" settings.py
+    sed -i "s#READONLY_DB_DBNAME = .*#READONLY_DB_DBNAME = os.getenv('READONLY_DB_DBNAME', '${TASK_DB_DBNAME}')#g" settings.py
+    #redis配置
+    sed -i "s#DEFAULT_REDIS_HOST = .*#DEFAULT_REDIS_HOST = os.getenv('DEFAULT_REDIS_HOST', '${DEFAULT_REDIS_HOST}')#g" settings.py
+    sed -i "s#DEFAULT_REDIS_PORT = .*#DEFAULT_REDIS_PORT = os.getenv('DEFAULT_REDIS_PORT', '${DEFAULT_REDIS_PORT}')#g" settings.py
+    sed -i "s#DEFAULT_REDIS_PASSWORD = .*#DEFAULT_REDIS_PASSWORD = os.getenv('DEFAULT_REDIS_PASSWORD', '${DEFAULT_REDIS_PASSWORD}')#g" settings.py
+    #MQ配置
+    sed -i "s#DEFAULT_MQ_ADDR = .*#DEFAULT_MQ_ADDR = os.getenv('DEFAULT_MQ_ADDR', '${DEFAULT_MQ_ADDR}')#g" settings.py
+    sed -i "s#DEFAULT_MQ_USER = .*#DEFAULT_MQ_USER = os.getenv('DEFAULT_MQ_USER', '${DEFAULT_MQ_USER}')#g" settings.py
+    sed -i "s#DEFAULT_MQ_PWD = .*#DEFAULT_MQ_PWD = os.getenv('DEFAULT_MQ_PWD', '${DEFAULT_MQ_PWD}')#g" settings.py
 
-#删除没必要的目录映射
-#这是测试用到的，先删除掉
-name=/var/www
-sed -i 's#'$name'#EXCLUSIVE#;/EXCLUSIVE/d' docker-compose.yml
-name_test=/var/www/task_scheduler/db_sync.py
-sed -i 's#'$name_test'#EXCLUSIVE02#;/EXCLUSIVE02/d' Dockerfile
+    #删除没必要的目录映射
+    #这是测试用到的，先删除掉
+    name=/var/www
+    sed -i 's#'$name'#EXCLUSIVE#;/EXCLUSIVE/d' docker-compose.yml
+    name_test=/var/www/task_scheduler/db_sync.py
+    sed -i 's#'$name_test'#EXCLUSIVE02#;/EXCLUSIVE02/d' Dockerfile
 
-#编译镜像
-docker build . -t task_scheduler_image
-#启动
-docker-compose up -d
-#检查状态
-sleep 3s
-task_status=`curl -I -X GET -m  10 -o /dev/null -s -w %{http_code}  http://$task_domain:8020/are_you_ok/`
+    #编译镜像
+    docker build . -t task_scheduler_image
+    #启动
+    docker-compose up -d
+    #检查状态
+    sleep 3s
+    task_status=`curl -I -X GET -m  10 -o /dev/null -s -w %{http_code}  http://$task_domain:8020/are_you_ok/`
 
-if [ $task_status == 200 ];then
-    echo -e "\033[32m [INFO]: codo(任务系统) install success. \033[0m"
-else
-    echo -e "\033[31m [ERROR]: codo(任务系统) install faild \033[0m"
-    exit -9
-fi
-
+    if [ $task_status == 200 ];then
+        echo -e "\033[32m [INFO]: codo(任务系统) install success. \033[0m"
+    else
+        echo -e "\033[31m [ERROR]: codo(任务系统) install faild \033[0m"
+        exit -9
+    fi
 }
 
 
 
 #定时任务
 function codo_cron(){
-echo -e "\033[32m [INFO]: codo_cron(定时任务) Start install. \033[0m"
-if ! which wget &>/dev/null; then yum install -y wget >/dev/null 2>&1;fi
-if ! which git &>/dev/null; then yum install -y git >/dev/null 2>&1;fi
-[ ! -d /opt/codo/ ] && mkdir -p /opt/codo
-cd /opt/codo && git clone https://github.com/opendevops-cn/codo-cron.git
-cd codo-cron
+    echo -e "\033[32m [INFO]: codo_cron(定时任务) Start install. \033[0m"
+    if ! which wget &>/dev/null; then yum install -y wget >/dev/null 2>&1;fi
+    if ! which git &>/dev/null; then yum install -y git >/dev/null 2>&1;fi
+    [ ! -d /opt/codo/ ] && mkdir -p /opt/codo
+    cd /opt/codo && git clone https://github.com/opendevops-cn/codo-cron.git
+    cd codo-cron
 
-#修改配置
-CRON_DB_DBNAME='codo_cron'
- #后端数据库名称
-mysql -h 127.0.0.1 -u root -p${MYSQL_PASSWORD} -e "create database ${CRON_DB_DBNAME} default character set utf8mb4 collate utf8mb4_unicode_ci;"
+    #修改配置
+    CRON_DB_DBNAME='codo_cron'
+     #后端数据库名称
+    mysql -h 127.0.0.1 -u root -p${MYSQL_PASSWORD} -e "create database ${CRON_DB_DBNAME} default character set utf8mb4 collate utf8mb4_unicode_ci;"
 
-sed -i  "s#server_name .*#server_name ${task_domain};#g" doc/nginx_ops.conf
-sed -i "s#cookie_secret = .*#cookie_secret = '${cookie_secret}'#g" settings.py
-sed -i "s#token_secret = .*#token_secret = '${token_secret}'#g" settings.py
-#mysql配置
-sed -i "s#DEFAULT_DB_DBHOST = .*#DEFAULT_DB_DBHOST = os.getenv('DEFAULT_DB_DBHOST', '${DEFAULT_DB_DBHOST}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBUSER = .*#DEFAULT_DB_DBUSER = os.getenv('DEFAULT_DB_DBUSER', '${DEFAULT_DB_DBUSER}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBPWD = .*#DEFAULT_DB_DBPWD = os.getenv('DEFAULT_DB_DBPWD', '${DEFAULT_DB_DBPWD}')#g" settings.py
-sed -i "s#DEFAULT_DB_DBNAME = .*#DEFAULT_DB_DBNAME = os.getenv('DEFAULT_DB_DBNAME', '${CRON_DB_DBNAME}')#g" settings.py
-#只读MySQL配置
-sed -i "s#READONLY_DB_DBHOST = .*#READONLY_DB_DBHOST = os.getenv('READONLY_DB_DBHOST', '${READONLY_DB_DBHOST}')#g" settings.py
-sed -i "s#READONLY_DB_DBPORT = .*#READONLY_DB_DBPORT = os.getenv('READONLY_DB_DBPORT', '${READONLY_DB_DBPORT}')#g" settings.py
-sed -i "s#READONLY_DB_DBUSER = .*#READONLY_DB_DBUSER = os.getenv('READONLY_DB_DBUSER', '${READONLY_DB_DBUSER}')#g" settings.py
-sed -i "s#READONLY_DB_DBPWD = .*#READONLY_DB_DBPWD = os.getenv('READONLY_DB_DBPWD', '${READONLY_DB_DBPWD}')#g" settings.py
-sed -i "s#READONLY_DB_DBNAME = .*#READONLY_DB_DBNAME = os.getenv('READONLY_DB_DBNAME', '${CRON_DB_DBNAME}')#g" settings.py
-#redis配置
-sed -i "s#DEFAULT_REDIS_HOST = .*#DEFAULT_REDIS_HOST = os.getenv('DEFAULT_REDIS_HOST', '${DEFAULT_REDIS_HOST}')#g" settings.py
-sed -i "s#DEFAULT_REDIS_PORT = .*#DEFAULT_REDIS_PORT = os.getenv('DEFAULT_REDIS_PORT', '${DEFAULT_REDIS_PORT}')#g" settings.py
-sed -i "s#DEFAULT_REDIS_PASSWORD = .*#DEFAULT_REDIS_PASSWORD = os.getenv('DEFAULT_REDIS_PASSWORD', '${DEFAULT_REDIS_PASSWORD}')#g" settings.py
+    sed -i  "s#server_name .*#server_name ${task_domain};#g" doc/nginx_ops.conf
+    sed -i "s#cookie_secret = .*#cookie_secret = '${cookie_secret}'#g" settings.py
+    sed -i "s#token_secret = .*#token_secret = '${token_secret}'#g" settings.py
+    #mysql配置
+    sed -i "s#DEFAULT_DB_DBHOST = .*#DEFAULT_DB_DBHOST = os.getenv('DEFAULT_DB_DBHOST', '${DEFAULT_DB_DBHOST}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBUSER = .*#DEFAULT_DB_DBUSER = os.getenv('DEFAULT_DB_DBUSER', '${DEFAULT_DB_DBUSER}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBPORT = .*#DEFAULT_DB_DBPORT = os.getenv('DEFAULT_DB_DBPORT', '${DEFAULT_DB_DBPORT}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBPWD = .*#DEFAULT_DB_DBPWD = os.getenv('DEFAULT_DB_DBPWD', '${DEFAULT_DB_DBPWD}')#g" settings.py
+    sed -i "s#DEFAULT_DB_DBNAME = .*#DEFAULT_DB_DBNAME = os.getenv('DEFAULT_DB_DBNAME', '${CRON_DB_DBNAME}')#g" settings.py
+    #只读MySQL配置
+    sed -i "s#READONLY_DB_DBHOST = .*#READONLY_DB_DBHOST = os.getenv('READONLY_DB_DBHOST', '${READONLY_DB_DBHOST}')#g" settings.py
+    sed -i "s#READONLY_DB_DBPORT = .*#READONLY_DB_DBPORT = os.getenv('READONLY_DB_DBPORT', '${READONLY_DB_DBPORT}')#g" settings.py
+    sed -i "s#READONLY_DB_DBUSER = .*#READONLY_DB_DBUSER = os.getenv('READONLY_DB_DBUSER', '${READONLY_DB_DBUSER}')#g" settings.py
+    sed -i "s#READONLY_DB_DBPWD = .*#READONLY_DB_DBPWD = os.getenv('READONLY_DB_DBPWD', '${READONLY_DB_DBPWD}')#g" settings.py
+    sed -i "s#READONLY_DB_DBNAME = .*#READONLY_DB_DBNAME = os.getenv('READONLY_DB_DBNAME', '${CRON_DB_DBNAME}')#g" settings.py
+    #redis配置
+    sed -i "s#DEFAULT_REDIS_HOST = .*#DEFAULT_REDIS_HOST = os.getenv('DEFAULT_REDIS_HOST', '${DEFAULT_REDIS_HOST}')#g" settings.py
+    sed -i "s#DEFAULT_REDIS_PORT = .*#DEFAULT_REDIS_PORT = os.getenv('DEFAULT_REDIS_PORT', '${DEFAULT_REDIS_PORT}')#g" settings.py
+    sed -i "s#DEFAULT_REDIS_PASSWORD = .*#DEFAULT_REDIS_PASSWORD = os.getenv('DEFAULT_REDIS_PASSWORD', '${DEFAULT_REDIS_PASSWORD}')#g" settings.py
 
-#删除没必要的目录映射
-#这是测试用到的，先删除掉
-name=/var/www
-sed -i 's#'$name'#EXCLUSIVE#;/EXCLUSIVE/d' docker-compose.yml
-name_test=/var/www/do_cron/db_sync.py
-sed -i 's#'$name_test'#EXCLUSIVE02#;/EXCLUSIVE02/d' Dockerfile
+    #删除没必要的目录映射
+    #这是测试用到的，先删除掉
+    name=/var/www
+    sed -i 's#'$name'#EXCLUSIVE#;/EXCLUSIVE/d' docker-compose.yml
+    name_test=/var/www/do_cron/db_sync.py
+    sed -i 's#'$name_test'#EXCLUSIVE02#;/EXCLUSIVE02/d' Dockerfile
 
-#编译镜像
-docker build . -t do_cron_image
+    #编译镜像
+    docker build . -t do_cron_image
 
-#启动
-docker-compose up -d
-sleep 3s
-cron_status=`curl -I -X GET -m  10 -o /dev/null -s -w %{http_code}  http://$LOCALHOST_IP:9900/are_you_ok/`
+    #启动
+    docker-compose up -d
+    sleep 3s
+    cron_status=`curl -I -X GET -m  10 -o /dev/null -s -w %{http_code}  http://$LOCALHOST_IP:9900/are_you_ok/`
 
-if [ $task_status == 200 ];then
-    echo -e "\033[32m [INFO]: codo(定时任务) install success. \033[0m"
-else
-    echo -e "\033[31m [ERROR]: codo(定时任务) install faild \033[0m"
-    exit -9
-fi
-
+    if [ $task_status == 200 ];then
+        echo -e "\033[32m [INFO]: codo(定时任务) install success. \033[0m"
+    else
+        echo -e "\033[31m [ERROR]: codo(定时任务) install faild \033[0m"
+        exit -9
+    fi
 }
 
 
@@ -504,8 +498,8 @@ public_key = /root/.ssh/id_rsa.pub
 EOF
 
 #这是测试用到的，先删除掉
-name=/var/www
-sed -i 's#'$name'#EXCLUSIVE#;/EXCLUSIVE/d' docker-compose.yml
+#name=/var/www
+#sed -i 's#'$name'#EXCLUSIVE#;/EXCLUSIVE/d' docker-compose.yml
 
 #编译镜像
 docker build . -t cmdb
@@ -536,7 +530,7 @@ if ! which wget &>/dev/null; then yum install -y wget >/dev/null 2>&1;fi
 if ! which git &>/dev/null; then yum install -y git >/dev/null 2>&1;fi
 [ ! -d /opt/codo/ ] && mkdir -p /opt/codo
 cd /opt/codo/ && git clone https://github.com/ss1917/api-gateway.git
-\cp -arp api-gateway/* /usr/local/openresty/nginx/
+cp -arp api-gateway/* /usr/local/openresty/nginx/
 
 #修改配置
 
